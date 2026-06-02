@@ -18,7 +18,7 @@ jobs:
 
       - name: Add host to known_hosts
         run: |
-          ssh-keyscan -t ed25519 ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -t ed25519 ${{ secrets.EC2_HOST }}
 
       - name: Create .env file
         run: |
