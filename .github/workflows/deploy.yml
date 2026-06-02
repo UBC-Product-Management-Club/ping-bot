@@ -26,6 +26,9 @@ jobs:
           SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_SIGNING_SECRET=${{ secrets.SLACK_SIGNING_SECRET }}
           SLACK_APP_TOKEN=${{ secrets.SLACK_APP_TOKEN }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_PUBLIC_KEY=${{ secrets.SUPABASE_PUBLIC_KEY }}
           EOF
 
       - name: Sync code to EC2
