@@ -1,33 +1,39 @@
 import "dotenv/config";
 import pkg from "@slack/bolt";
 const { App } = pkg;
-import fs from "fs";
-import "./birthday.js";
-
-const roles = JSON.parse(fs.readFileSync("roles.json", "utf8"));
-const pingMap = new Map();
 
 export const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-  socketMode: true, // set to false if calling URL
-  appToken: process.env.SLACK_APP_TOKEN, // else if socket mode
+  socketMode: !!process.env.SLACK_APP_TOKEN,  // Set to false if token is missing
+  appToken: process.env.SLACK_APP_TOKEN,      // Else use the app token if socket mode is enabled
 });
 
-// Debug logs
-app.receiver.client.on("connecting", () => {
-  console.log("Connecting to Slack using Socket Mode...");
-});
+import { cache, refreshCache } from "./cache.js";
+import "./birthday.js";
 
-app.receiver.client.on("connected", () => {
-  console.log("Socket Mode connection established.");
-});
+const pingMap = new Map();
 
-app.receiver.client.on("error", (error) => {
-  console.error("Socket Mode connection error:", error);
-});
+// TODO: Delete debug logs for socket mode
+if (app.receiver.client) {
+  app.receiver.client.on("connecting", () => {
+    console.log("Connecting to Slack using Socket Mode...");
+  });
 
-// Listens for messages containing role mentions e.g. @dev
+  app.receiver.client.on("connected", () => {
+    console.log("Socket Mode connection established.");
+  });
+
+  app.receiver.client.on("error", (error) => {
+    console.error("Socket Mode connection error:", error);
+  });
+}
+
+/**
+ * Listens for messages in channels the bot is a member of. Looks for 
+ * @mentions that match roles defined in the cache and responds by tagging 
+ * all users associated with those roles in a thread.
+ */
 app.message(async ({ message, say }) => {
   if (message.subtype || message.bot_id) {
     return;
@@ -39,8 +45,10 @@ app.message(async ({ message, say }) => {
 
   for (const [, role] of found) {
     const lowerCaseRole = role.toLowerCase();
-    if (roles[lowerCaseRole]) {
-      roles[lowerCaseRole].forEach((userId) => usersToPing.add(userId));
+    if (cache.rolesMap[lowerCaseRole]) {
+      cache.rolesMap[lowerCaseRole].forEach((userId) =>
+        usersToPing.add(userId),
+      );
     }
   }
 
@@ -55,6 +63,8 @@ app.message(async ({ message, say }) => {
 });
 
 (async () => {
+  await refreshCache();
+
   await app.start(process.env.PORT || 3000);
   console.log("Geary bot running");
 })();

@@ -1,44 +1,65 @@
 import cron from "node-cron";
 import { app } from "./index.js";
-import fs from "fs";
+import { cache } from "./cache.js";
 import { format, formatInTimeZone } from "date-fns-tz";
 import { differenceInYears, parse } from "date-fns";
 
-const BIRTHDAY_CHANNEL_ID = "C08QZ3A0QSY"; 
+const BIRTHDAY_CHANNEL_ID = "C08QZ3A0QSY";
 const TIME_ZONE = "America/Los_Angeles"; // PST
 
-const birthdays = JSON.parse(fs.readFileSync("birthdays.json", "utf8"));
-
-// Helper to get person's current age given month and day
+/**
+ * Calculates age based on birth date string. Tries multiple formats for flexibility.
+ * @param {*} birthDateString
+ * @returns {number} The calculated age
+ */
 const getAge = (birthDateString) => {
   const birthDate = parse(birthDateString, "MM/dd/yyyy", new Date());
   return differenceInYears(new Date(), birthDate);
 };
 
-// Checks current date with list of birthdays and sends a message if a birthday is found
+/**
+ * Checks current date with list of birthdays and sends a message if a birthday is found
+ * @returns {Promise<void>} request to https://api.slack.com/methods/chat.postMessage
+ */
 const checkBirthdaysAndSendMessage = async () => {
-  if (!birthdays.length) {
-    console.log("No birthdays loaded, skipping check.");
+  if (!cache.members || !cache.members.length) {
     return;
   }
 
   const nowPST = formatInTimeZone(new Date(), TIME_ZONE, "yyyy-MM-dd");
   const todayMonthDayPST = format(nowPST, "MM/dd", { timeZone: TIME_ZONE });
 
-  console.log(`Checking for birthdays on ${todayMonthDayPST} (PST)`);
-
-  for (const person of birthdays) {
+  for (const person of cache.members) {
     try {
-      const birthDate = parse(person.birthday, "MM/dd/yyyy", new Date());
-      const personBirthdayMonthDay = format(birthDate, "MM/dd");
+      if (!person.birthday) continue;
+
+      const birthDate = parse(person.birthday, "yyyy-MM-dd", new Date());
+      let parsedDate = birthDate;
+      if (isNaN(parsedDate)) {
+        parsedDate = parse(person.birthday, "MM/dd/yyyy", new Date());
+      }
+      if (isNaN(parsedDate)) continue;
+
+      const personBirthdayMonthDay = format(parsedDate, "MM/dd");
 
       if (personBirthdayMonthDay === todayMonthDayPST) {
-        const age = getAge(person.birthday);
-        const message = `Today is <@${person.slack_id}>'s ${age}th birthday! Wish them a happy birthday 🎉`;
+        const age = differenceInYears(new Date(), parsedDate);
+        let suffix;
+        switch (age % 10) {
+          case 1:
+            suffix = "st";
+            break;
+          case 2:
+            suffix = "nd";
+            break;
+          case 3:
+            suffix = "rd";
+            break;
+          default:
+            suffix = "th";
+        }
+        const message = `Today is <@${person.slack_user_id}>'s ${age}${suffix} birthday! Wish them a happy birthday 🎉`;
 
-        console.log(
-          `It's ${person.name}'s birthday. Sending message to ${BIRTHDAY_CHANNEL_ID}.`
-        );
         await app.client.chat.postMessage({
           token: process.env.SLACK_BOT_TOKEN,
           channel: BIRTHDAY_CHANNEL_ID,
@@ -55,13 +76,10 @@ const checkBirthdaysAndSendMessage = async () => {
 cron.schedule(
   "0 9 * * *",
   () => {
-    console.log("Running scheduled birthday check...");
     checkBirthdaysAndSendMessage();
   },
   {
     scheduled: true,
     timezone: TIME_ZONE,
-  }
+  },
 );
-
-console.log("Birthday scheduler running, checks daily at 9.00AM");
