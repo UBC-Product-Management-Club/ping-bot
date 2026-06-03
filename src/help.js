@@ -3,9 +3,7 @@ import path from "path";
 import { app } from "./index.js";
 
 /**
- * Listens for the `help` command and displays bot usage instructions.
- * 
- * Usage: /help
+ * Helper to convert standard Markdown to Slack's custom mrkdwn format.
  */
 function markdownToMrkdwn(text) {
   return text
@@ -14,6 +12,11 @@ function markdownToMrkdwn(text) {
     .replace(/^\s*[-*]\s+/gm, "• ");
 }
 
+/**
+ * Listens for the `help` command and displays bot usage instructions.
+ * 
+ * Usage: /help
+ */
 app.command("/help", async ({ ack, respond }) => {
   await ack();
   try {

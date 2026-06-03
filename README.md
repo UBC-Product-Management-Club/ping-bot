@@ -23,6 +23,12 @@ Listens for the `assign` command and assigns the user to the given department.
 Usage: /assign <@slack_user> [department]
 Only users with the `leadership` or `pres` role can use this command.
 
+### `/help`
+
+Listens for the `help` command and displays bot usage instructions.
+
+Usage: /help
+
 ### `/remove`
 
 Listens for the `remove` command and removes the user from the given department or all departments.
