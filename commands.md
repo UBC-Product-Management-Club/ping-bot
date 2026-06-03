@@ -1,4 +1,4 @@
-# :settings-emoji: Geary can do:
+# ⚙️ Geary can do:
 
 ### Team-wide Mentions
 **Tag all members of a department:** Mention any active department (e.g. `@tech`, `@events`, `@community`) in a message in any channel the bot is a member of.

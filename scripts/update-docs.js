@@ -49,7 +49,7 @@ async function main() {
       generatedMarkdown += `${cmd.doc}\n\n`;
     }
 
-    const commandsMdContent = `# :settings-emoji: Geary can do:\n\n${generatedMarkdown}`;
+    const commandsMdContent = `# ⚙️ Geary can do:\n\n${generatedMarkdown}`;
     await fs.writeFile(commandsMdPath, commandsMdContent, "utf8");
     console.log("Successfully wrote commands.md");
 
