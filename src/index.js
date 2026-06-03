@@ -10,7 +10,6 @@ export const app = new App({
 });
 
 import { cache, refreshCache } from "./cache.js";
-import "./birthday.js";
 
 const pingMap = new Map();
 
@@ -64,6 +63,9 @@ app.message(async ({ message, say }) => {
 
 (async () => {
   await refreshCache();
+  await import("./birthday.js");
+  await import("./dept.js");
+  await import("./help.js");
 
   await app.start(process.env.PORT || 3000);
   console.log("Geary bot running");
