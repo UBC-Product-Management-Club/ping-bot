@@ -20,10 +20,10 @@ Listens for the `help` command and displays bot usage instructions.
 
 Usage: /help
 
-### `/remove`
+### `/unassign`
 
-Listens for the `remove` command and removes the user from the given department or all departments.
+Listens for the `unassign` command and removes the user from the given department or all departments.
 
-Usage: /remove <@slack_user> [department] or /remove <@slack_user>
+Usage: /unassign <@slack_user> [department] or /unassign <@slack_user>
 Only users with the `leadership` or `pres` role can use this command.
 

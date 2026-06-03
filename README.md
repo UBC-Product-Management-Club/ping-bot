@@ -11,10 +11,8 @@ Static sourcing from `roles.json` is deprecated in favor of fetching from the Su
 
 ## Features
 
-### Mentions
-**Tag all members of a department:** Mention any active department in a message in any channel the bot is a member of.
-
-Usage: @community
+### Role Pinging / Mentions
+**Tag all members of a department:** Mention any active department (e.g. `@tech`, `@events`, `@community`) in a message in any channel the bot is a member of.
 
 ## Commands
 
@@ -31,14 +29,16 @@ Listens for the `help` command and displays bot usage instructions.
 
 Usage: /help
 
-### `/remove`
+### `/unassign`
 
-Listens for the `remove` command and removes the user from the given department or all departments.
+Listens for the `unassign` command and removes the user from the given department or all departments.
 
-Usage: /remove <@slack_user> [department] or /remove <@slack_user>
+Usage: /unassign <@slack_user> [department] or /unassign <@slack_user>
 Only users with the `leadership` or `pres` role can use this command.
 
 <!-- COMMANDS_END -->
+
+When adding a command: Remember to register it in the [Slack App Dashboard](https://api.slack.com/apps/A08N0934MDG/slash-commands?saved=1).
 
 ## Environment
 You will need the following variables in your `.env` to run the bot:

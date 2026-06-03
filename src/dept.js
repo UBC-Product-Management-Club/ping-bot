@@ -194,12 +194,12 @@ app.command("/assign", async ({ command, ack, respond, client }) => {
 });
 
 /**
- * Listens for the `remove` command and removes the user from the given department or all departments.
+ * Listens for the `unassign` command and removes the user from the given department or all departments.
  * 
- * Usage: /remove <@slack_user> [department] or /remove <@slack_user>
+ * Usage: /unassign <@slack_user> [department] or /unassign <@slack_user>
  * Only users with the `leadership` or `pres` role can use this command.
  */
-app.command("/remove", async ({ command, ack, respond, client }) => {
+app.command("/unassign", async ({ command, ack, respond, client }) => {
   await ack();
 
   try {
@@ -213,7 +213,7 @@ app.command("/remove", async ({ command, ack, respond, client }) => {
 
     if (!match) {
       await respond({
-        text: "Invalid command format. Usage: `/remove @member [department]` or `/remove @member`",
+        text: "Invalid command format. Usage: `/unassign @member [department]` or `/unassign @member`",
         response_type: "ephemeral",
       });
       return;
@@ -322,7 +322,7 @@ app.command("/remove", async ({ command, ack, respond, client }) => {
       });
     }
   } catch (error) {
-    console.error("Error executing /remove command:", error);
+    console.error("Error executing /unassign command:", error);
     await respond({
       text: `An error occurred: ${error.message}`,
       response_type: "ephemeral",
