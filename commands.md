@@ -13,6 +13,10 @@ Only users with the `leadership` or `pres` role can use this command.
 
 Usage: /help
 
+`/query`: Displays the target user's name, departments, and birthday.
+
+Usage: /query <@slack_user>
+
 `/unassign`: Removes the user from the given department or all departments.
 
 Usage: /unassign <@slack_user> [department] or /unassign <@slack_user>

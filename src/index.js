@@ -66,6 +66,7 @@ app.message(async ({ message, say }) => {
   await import("./birthday.js");
   await import("./dept.js");
   await import("./help.js");
+  await import("./query.js");
 
   await app.start(process.env.PORT || 3000);
   console.log("Geary bot running");
