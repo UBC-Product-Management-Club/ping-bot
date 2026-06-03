@@ -53,3 +53,4 @@ The UBC PMC instance is deployed on an EC2 instance. Contact tech@ubcpmc.com / N
 ## To-do
 * [Urgent] Allow users to view CRUD webUI through admin-portal integration
 * [Non-urgent] Notion integration for birthday updates
+* [Internal cleanup] Refactor flat `src/*.js` files to grouped modules.
