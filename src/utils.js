@@ -1,38 +1,57 @@
-import { cache, supabase } from "./cache.js";
+import { supabase } from "./cache.js";
 
 /**
  * Helper to verify if the requester has permission (is leadership or president).
  * Responds ephemerally if permission is denied.
  */
 export async function verifyPermission(requesterId, respond) {
-  let requester = cache.members.find((m) => m.slack_user_id === requesterId);
-
-  if (!requester && supabase) {
-    const { data } = await supabase
-      .from("execs")
-      .select("*")
-      .eq("slack_user_id", requesterId)
-      .maybeSingle();
-    if (data) {
-      requester = data;
-    }
-  }
-
-  const hasPermission = requester && requester.roles && requester.roles.some(
-    (role) => {
-      const lowerRole = role.toLowerCase();
-      return lowerRole === "leadership" || lowerRole === "pres";
-    }
-  );
-
-  if (!hasPermission) {
+  if (!supabase) {
     await respond({
-      text: "You do not have permission to manage departments. Only leadership and presidents can perform this action.",
+      text: "Database connection is not available.",
       response_type: "ephemeral",
     });
     return false;
   }
-  return true;
+
+  try {
+    const { data: requester, error } = await supabase
+      .from("execs")
+      .select("*")
+      .eq("slack_user_id", requesterId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Supabase select error in verifyPermission:", error);
+      await respond({
+        text: `Database error checking permissions: ${error.message}`,
+        response_type: "ephemeral",
+      });
+      return false;
+    }
+
+    const hasPermission = requester && requester.roles && requester.roles.some(
+      (role) => {
+        const lowerRole = role.toLowerCase();
+        return lowerRole === "leadership" || lowerRole === "pres";
+      }
+    );
+
+    if (!hasPermission) {
+      await respond({
+        text: "You do not have permission to manage departments. Only leadership and presidents can perform this action.",
+        response_type: "ephemeral",
+      });
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Error verifying permissions:", err);
+    await respond({
+      text: `An error occurred while verifying permissions: ${err.message}`,
+      response_type: "ephemeral",
+    });
+    return false;
+  }
 }
 
 /**

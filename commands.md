@@ -15,7 +15,7 @@ Usage: /help
 
 `/query`: Displays the target user's name, departments, and birthday.
 
-Usage: /query <@slack_user>
+Usage: /query <@slack_user> or /query [name]
 
 `/unassign`: Removes the user from the given department or all departments.
 

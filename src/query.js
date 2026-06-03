@@ -1,28 +1,47 @@
 import { app } from "./index.js";
-import { supabase } from "./cache.js";
+import { cache, supabase } from "./cache.js";
 import { getValidTargetUser } from "./utils.js";
 
 /**
  * `/query`: Displays the target user's name, departments, and birthday.
  * 
- * Usage: /query <@slack_user>
+ * Usage: /query <@slack_user> or /query [name]
  */
 app.command("/query", async ({ command, ack, respond, client }) => {
   await ack();
 
   try {
     const text = command.text.trim();
-    const match = text.match(/<@([A-Z0-9]+)(?:\|[^>]+)?>/i);
+    let targetUserId = null;
 
-    if (!match) {
+    // Try to match standard Slack user tag: <@U12345678> or <@U12345678|name>
+    const match = text.match(/<@([A-Z0-9]+)(?:\|[^>]+)?>/i);
+    
+    if (match) {
+      targetUserId = match[1];
+    } else if (text.length > 0) {
+      // Fallback: search by name/username in the local database cache
+      const searchName = text.replace(/^@/, "").trim().toLowerCase();
+      
+      const foundMember = cache.members.find(
+        (m) =>
+          (m.name && m.name.toLowerCase().includes(searchName)) ||
+          (m.slack_user_id && m.slack_user_id.toLowerCase() === searchName)
+      );
+      
+      if (foundMember) {
+        targetUserId = foundMember.slack_user_id;
+      }
+    }
+
+    if (!targetUserId) {
       await respond({
-        text: "Invalid command format. Usage: `/query @member`",
+        text: "Invalid command format or member not found. Usage: `/query @member` or `/query [name]`",
         response_type: "ephemeral",
       });
       return;
     }
 
-    const targetUserId = match[1];
     const targetUser = await getValidTargetUser(targetUserId, client, respond);
     if (!targetUser) return;
 
