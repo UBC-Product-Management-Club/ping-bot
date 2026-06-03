@@ -90,6 +90,18 @@ export async function getValidTargetUser(targetUserId, client, respond) {
 }
 
 /**
+ * Clean and unescape HTML entities from a Slack slash command input string.
+ */
+export function cleanCommandText(text) {
+  if (!text) return "";
+  return text
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .trim();
+}
+
+/**
  * Resolves a target user input (either a Slack mention or a raw name/username)
  * to a validated Slack User ID and user details.
  */
@@ -102,15 +114,17 @@ export async function resolveTargetUser(input, client, respond) {
     return null;
   }
 
+  const cleanInput = cleanCommandText(input);
+
   let targetUserId = null;
 
   // 1. Try matching standard Slack user tag: <@U12345678> or <@U12345678|name>
-  const match = input.match(/<@([A-Z0-9]+)(?:\|[^>]+)?>/i);
+  const match = cleanInput.match(/<@([A-Z0-9]+)(?:\|[^>]+)?>/i);
   if (match) {
     targetUserId = match[1];
   } else {
     // 2. Try searching by name/username in the local database cache
-    const searchName = input.replace(/^@/, "").trim().toLowerCase();
+    const searchName = cleanInput.replace(/^@/, "").trim().toLowerCase();
     if (searchName.length > 0) {
       const foundMember = cache.members.find(
         (m) =>
@@ -125,7 +139,7 @@ export async function resolveTargetUser(input, client, respond) {
 
   if (!targetUserId) {
     await respond({
-      text: `Could not resolve member: *${input}*. Make sure to tag them (e.g. @member) or use their exact name.`,
+      text: `Could not resolve member: *${cleanInput}*. Make sure to tag them (e.g. @member) or use their exact name.`,
       response_type: "ephemeral",
     });
     return null;
