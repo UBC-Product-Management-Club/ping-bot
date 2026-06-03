@@ -26,6 +26,7 @@ export const supabase =
 export const cache = {
   members: [], // Array of DB rows: { id, name, slack_user_id, birthday, roles }
   rolesMap: {}, // Map of role -> Set of slack_user_ids
+  slackUsers: [], // Array of raw Slack user objects for username resolution
 };
 
 /**
@@ -60,6 +61,28 @@ export const refreshCache = async () => {
     }
   } catch (err) {
     console.error("Failed to refresh Supabase cache:", err);
+  }
+};
+
+/**
+ * Refreshes the in-memory cache of Slack users from the Slack API.
+ */
+export const refreshSlackUsersCache = async () => {
+  try {
+    let cursor;
+    const slackUsers = [];
+    do {
+      const resp = await slackClient.users.list({
+        limit: 200,
+        cursor,
+      });
+      slackUsers.push(...(resp.members || []));
+      cursor = resp.response_metadata?.next_cursor;
+    } while (cursor);
+    cache.slackUsers = slackUsers;
+    console.log(`Slack users cache refreshed: ${slackUsers.length} users loaded.`);
+  } catch (err) {
+    console.error("Failed to refresh Slack users cache:", err);
   }
 };
 
@@ -127,6 +150,7 @@ export const syncSlackUsers = async () => {
         console.log(`Inserted new user ${slackId}: ${name}`);
       }
     }
+    cache.slackUsers = slackUsers;
     await refreshCache();
     console.log("Slack sync complete.");
   } catch (err) {

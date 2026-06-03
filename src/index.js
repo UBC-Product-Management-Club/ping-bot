@@ -9,7 +9,7 @@ export const app = new App({
   appToken: process.env.SLACK_APP_TOKEN,      // Else use the app token if socket mode is enabled
 });
 
-import { cache, refreshCache } from "./cache.js";
+import { cache, refreshCache, refreshSlackUsersCache } from "./cache.js";
 
 const pingMap = new Map();
 
@@ -63,6 +63,7 @@ app.message(async ({ message, say }) => {
 
 (async () => {
   await refreshCache();
+  await refreshSlackUsersCache();
   await import("./birthday.js");
   await import("./dept.js");
   await import("./help.js");
