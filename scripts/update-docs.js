@@ -42,15 +42,14 @@ async function main() {
 
     commandsList.sort((a, b) => a.name.localeCompare(b.name));
 
-    let generatedMarkdown = "## Features\n\n";
-    generatedMarkdown += "### Role Pinging / Mentions\n";
+    let generatedMarkdown = "### Team-wide Mentions\n";
     generatedMarkdown += "**Tag all members of a department:** Mention any active department (e.g. `@tech`, `@events`, `@community`) in a message in any channel the bot is a member of.\n\n";
-    generatedMarkdown += "## Commands\n\n";
+    generatedMarkdown += "### Commands\n";
     for (const cmd of commandsList) {
-      generatedMarkdown += `### \`${cmd.name}\`\n\n${cmd.doc}\n\n`;
+      generatedMarkdown += `${cmd.doc}\n\n`;
     }
 
-    const commandsMdContent = `# Geary Bot Features & Commands\n\n${generatedMarkdown}`;
+    const commandsMdContent = `# :settings-emoji: Geary can do:\n\n${generatedMarkdown}`;
     await fs.writeFile(commandsMdPath, commandsMdContent, "utf8");
     console.log("Successfully wrote commands.md");
 

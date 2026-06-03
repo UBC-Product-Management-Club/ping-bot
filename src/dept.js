@@ -78,7 +78,7 @@ async function getValidTargetUser(targetUserId, client, respond) {
 }
 
 /**
- * Listens for the `assign` command and assigns the user to the given department.
+ * `/assign`: Assigns the user to the given department.
  * 
  * Usage: /assign <@slack_user> [department]
  * Only users with the `leadership` or `pres` role can use this command.
@@ -194,7 +194,7 @@ app.command("/assign", async ({ command, ack, respond, client }) => {
 });
 
 /**
- * Listens for the `unassign` command and removes the user from the given department or all departments.
+ * `/unassign`: Removes the user from the given department or all departments.
  * 
  * Usage: /unassign <@slack_user> [department] or /unassign <@slack_user>
  * Only users with the `leadership` or `pres` role can use this command.

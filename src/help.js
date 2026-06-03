@@ -13,7 +13,7 @@ function markdownToMrkdwn(text) {
 }
 
 /**
- * Listens for the `help` command and displays bot usage instructions.
+ * `/help`: Displays bot usage instructions.
  * 
  * Usage: /help
  */
