@@ -1,7 +1,7 @@
 # PMC Ping Bot
-UBC Product Management Club internal slack bot
+UBC Product Management Club slack workspace bot
 
-* Ping workspace users by user groups i.e. @events, @leadership, @community, etc.
+* **User management**: Ping and assign workspace users by user groups i.e. @events, @leadership, @community, etc.
 * Automated birthday message for workspace members
 
 ### Deprecation
@@ -11,8 +11,10 @@ Static sourcing from `roles.json` is deprecated in favor of fetching from the Su
 
 ## Features
 
-### Role Pinging / Mentions
-**Tag all members of a department:** Mention any active department (e.g. `@tech`, `@events`, `@community`) in a message in any channel the bot is a member of.
+### Mentions
+**Tag all members of a department:** Mention any active department in a message in any channel the bot is a member of.
+
+Usage: @community
 
 ## Commands
 
