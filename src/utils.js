@@ -32,7 +32,11 @@ export async function verifyPermission(requesterId, respond) {
     const hasPermission = requester && requester.roles && requester.roles.some(
       (role) => {
         const lowerRole = role.toLowerCase();
-        return lowerRole === "leadership" || lowerRole === "pres";
+        return (
+          lowerRole === "leadership" ||
+          lowerRole === "pres" ||
+          lowerRole === "advisors"
+        );
       }
     );
 
