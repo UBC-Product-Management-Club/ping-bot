@@ -6,7 +6,7 @@
 ### Commands
 `/assign`: Assigns the user to the given department.
 
-Usage: /assign <@slack_user> [department]
+Usage: /assign <@slack_user> [department] or /assign [name] [department]
 Only users with the `leadership` or `pres` role can use this command.
 
 `/help`: Displays bot usage instructions.

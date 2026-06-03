@@ -1,4 +1,4 @@
-import { supabase } from "./cache.js";
+import { cache, supabase } from "./cache.js";
 
 /**
  * Helper to verify if the requester has permission (is leadership or president).
@@ -87,4 +87,52 @@ export async function getValidTargetUser(targetUserId, client, respond) {
   }
 
   return targetUser;
+}
+
+/**
+ * Resolves a target user input (either a Slack mention or a raw name/username)
+ * to a validated Slack User ID and user details.
+ */
+export async function resolveTargetUser(input, client, respond) {
+  if (!input) {
+    await respond({
+      text: "No member specified.",
+      response_type: "ephemeral",
+    });
+    return null;
+  }
+
+  let targetUserId = null;
+
+  // 1. Try matching standard Slack user tag: <@U12345678> or <@U12345678|name>
+  const match = input.match(/<@([A-Z0-9]+)(?:\|[^>]+)?>/i);
+  if (match) {
+    targetUserId = match[1];
+  } else {
+    // 2. Try searching by name/username in the local database cache
+    const searchName = input.replace(/^@/, "").trim().toLowerCase();
+    if (searchName.length > 0) {
+      const foundMember = cache.members.find(
+        (m) =>
+          (m.name && m.name.toLowerCase().includes(searchName)) ||
+          (m.slack_user_id && m.slack_user_id.toLowerCase() === searchName)
+      );
+      if (foundMember) {
+        targetUserId = foundMember.slack_user_id;
+      }
+    }
+  }
+
+  if (!targetUserId) {
+    await respond({
+      text: `Could not resolve member: *${input}*. Make sure to tag them (e.g. @member) or use their exact name.`,
+      response_type: "ephemeral",
+    });
+    return null;
+  }
+
+  const targetUser = await getValidTargetUser(targetUserId, client, respond);
+  if (!targetUser) return null;
+
+  return { targetUserId, targetUser };
 }

@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { app } from "./index.js";
 import { refreshCache, supabase } from "./cache.js";
-import { verifyPermission, getValidTargetUser } from "./utils.js";
+import { verifyPermission, resolveTargetUser } from "./utils.js";
 
 const deptsPath = path.join(process.cwd(), "departments.json");
 const deptsData = await fs.readFile(deptsPath, "utf8");
@@ -11,7 +11,7 @@ const departments = JSON.parse(deptsData);
 /**
  * `/assign`: Assigns the user to the given department.
  * 
- * Usage: /assign <@slack_user> [department]
+ * Usage: /assign <@slack_user> [department] or /assign [name] [department]
  * Only users with the `leadership` or `pres` role can use this command.
  */
 app.command("/assign", async ({ command, ack, respond, client }) => {
@@ -23,30 +23,31 @@ app.command("/assign", async ({ command, ack, respond, client }) => {
     }
 
     const text = command.text.trim();
-    const match = text.match(/<@([A-Z0-9]+)(?:\|[^>]+)?>\s+(\S+)/i);
-
-    if (!match) {
+    const lastSpaceIndex = text.lastIndexOf(" ");
+    if (lastSpaceIndex === -1) {
       await respond({
-        text: "Invalid command format. Usage: `/assign @member [department]`",
+        text: "Invalid command format. Usage: `/assign @member [department]` or `/assign [name] [department]`",
         response_type: "ephemeral",
       });
       return;
     }
 
-    const targetUserId = match[1];
-    const deptInput = match[2].toLowerCase();
+    const userInput = text.substring(0, lastSpaceIndex).trim();
+    const deptInput = text.substring(lastSpaceIndex + 1).trim().toLowerCase();
 
     if (!departments.includes(deptInput)) {
       const validDeptsList = departments.map((d) => `\`${d}\``).join(", ");
       await respond({
-        text: `Invalid department: *${match[2]}*. Valid departments are: ${validDeptsList}`,
+        text: `Invalid department: *${deptInput}*. Valid departments are: ${validDeptsList}`,
         response_type: "ephemeral",
       });
       return;
     }
 
-    const targetUser = await getValidTargetUser(targetUserId, client, respond);
-    if (!targetUser) return;
+    const resolved = await resolveTargetUser(userInput, client, respond);
+    if (!resolved) return;
+
+    const { targetUserId, targetUser } = resolved;
 
     if (!supabase) {
       await respond({
@@ -139,10 +140,7 @@ app.command("/unassign", async ({ command, ack, respond, client }) => {
     }
 
     const text = command.text.trim();
-    // Parse target user (e.g. <@U12345678>) and optional department (e.g. community)
-    const match = text.match(/<@([A-Z0-9]+)(?:\|[^>]+)?>\s*(\S+)?/i);
-
-    if (!match) {
+    if (!text) {
       await respond({
         text: "Invalid command format. Usage: `/unassign @member [department]` or `/unassign @member`",
         response_type: "ephemeral",
@@ -150,20 +148,22 @@ app.command("/unassign", async ({ command, ack, respond, client }) => {
       return;
     }
 
-    const targetUserId = match[1];
-    const deptInput = match[2] ? match[2].toLowerCase() : null;
+    let userInput = text;
+    let deptInput = null;
 
-    if (deptInput && !departments.includes(deptInput)) {
-      const validDeptsList = departments.map((d) => `\`${d}\``).join(", ");
-      await respond({
-        text: `Invalid department: *${match[2]}*. Valid departments are: ${validDeptsList}`,
-        response_type: "ephemeral",
-      });
-      return;
+    const lastSpaceIndex = text.lastIndexOf(" ");
+    if (lastSpaceIndex !== -1) {
+      const possibleDept = text.substring(lastSpaceIndex + 1).trim().toLowerCase();
+      if (departments.includes(possibleDept)) {
+        userInput = text.substring(0, lastSpaceIndex).trim();
+        deptInput = possibleDept;
+      }
     }
 
-    const targetUser = await getValidTargetUser(targetUserId, client, respond);
-    if (!targetUser) return;
+    const resolved = await resolveTargetUser(userInput, client, respond);
+    if (!resolved) return;
+
+    const { targetUserId } = resolved;
 
     if (!supabase) {
       await respond({
