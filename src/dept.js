@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { app } from "./index.js";
 import { refreshCache, supabase } from "./cache.js";
-import { verifyPermission, resolveTargetUser } from "./utils.js";
+import { verifyPermission, resolveTargetUser, cleanCommandText } from "./utils.js";
 
 const deptsPath = path.join(process.cwd(), "departments.json");
 const deptsData = await fs.readFile(deptsPath, "utf8");
@@ -22,7 +22,7 @@ app.command("/assign", async ({ command, ack, respond, client }) => {
       return;
     }
 
-    const text = command.text.trim();
+    const text = cleanCommandText(command.text);
     const lastSpaceIndex = text.lastIndexOf(" ");
     if (lastSpaceIndex === -1) {
       await respond({
@@ -93,10 +93,21 @@ app.command("/assign", async ({ command, ack, respond, client }) => {
         return;
       }
     } else {
+      const lowerRoles = (existingUser.roles || []).map((r) => r.toLowerCase());
+      if (lowerRoles.includes(deptInput)) {
+        await respond({
+          text: `<@${targetUserId}> is already assigned to the department: *${deptInput}*`,
+          response_type: "ephemeral",
+        });
+        return;
+      }
+
+      const updatedRoles = [...(existingUser.roles || []), deptInput];
+
       const { error: updateError } = await supabase
         .from("execs")
         .update({
-          roles: [deptInput],
+          roles: updatedRoles,
         })
         .eq("slack_user_id", targetUserId);
 
@@ -113,7 +124,7 @@ app.command("/assign", async ({ command, ack, respond, client }) => {
     await refreshCache();
 
     await respond({
-      text: `Successfully reassigned <@${targetUserId}> to department: *${deptInput}*`,
+      text: `Successfully assigned <@${targetUserId}> to department: *${deptInput}*`,
       response_type: "in_channel",
     });
   } catch (error) {
@@ -139,7 +150,7 @@ app.command("/unassign", async ({ command, ack, respond, client }) => {
       return;
     }
 
-    const text = command.text.trim();
+    const text = cleanCommandText(command.text);
     if (!text) {
       await respond({
         text: "Invalid command format. Usage: `/unassign @member [department]` or `/unassign @member`",

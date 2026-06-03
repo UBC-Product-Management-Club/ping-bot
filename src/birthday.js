@@ -8,16 +8,6 @@ const BIRTHDAY_CHANNEL_ID = "C08QZ3A0QSY";
 const TIME_ZONE = "America/Los_Angeles"; // PST
 
 /**
- * Calculates age based on birth date string. Tries multiple formats for flexibility.
- * @param {*} birthDateString
- * @returns {number} The calculated age
- */
-const getAge = (birthDateString) => {
-  const birthDate = parse(birthDateString, "MM/dd/yyyy", new Date());
-  return differenceInYears(new Date(), birthDate);
-};
-
-/**
  * Checks current date with list of birthdays and sends a message if a birthday is found
  * @returns {Promise<void>} request to https://api.slack.com/methods/chat.postMessage
  */

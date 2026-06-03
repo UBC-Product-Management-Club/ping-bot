@@ -1,6 +1,6 @@
 import { app } from "./index.js";
 import { supabase } from "./cache.js";
-import { resolveTargetUser } from "./utils.js";
+import { resolveTargetUser, cleanCommandText } from "./utils.js";
 
 /**
  * `/query`: Displays the target user's name, departments, and birthday.
@@ -11,7 +11,7 @@ app.command("/query", async ({ command, ack, respond, client }) => {
   await ack();
 
   try {
-    const text = command.text.trim();
+    const text = cleanCommandText(command.text);
     if (!text) {
       await respond({
         text: "Invalid command format. Usage: `/query @member` or `/query [name]`",
