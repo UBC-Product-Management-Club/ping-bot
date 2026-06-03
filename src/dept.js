@@ -16,7 +16,6 @@ const departments = JSON.parse(deptsData);
  */
 app.command("/assign", async ({ command, ack, respond, client }) => {
   await ack();
-  console.log(`Command received - /assign: "${command.text}" from user: ${command.user_id}`);
 
   try {
     if (!(await verifyPermission(command.user_id, respond))) {
@@ -145,7 +144,6 @@ app.command("/assign", async ({ command, ack, respond, client }) => {
  */
 app.command("/unassign", async ({ command, ack, respond, client }) => {
   await ack();
-  console.log(`Command received - /unassign: "${command.text}" from user: ${command.user_id}`);
 
   try {
     if (!(await verifyPermission(command.user_id, respond))) {

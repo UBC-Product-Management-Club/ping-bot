@@ -101,7 +101,6 @@ export function cleanCommandText(text) {
     .trim();
 }
 
-// TODO: Remove debug logs
 /**
  * Resolves a target user input (either a Slack mention or a raw name/username)
  * to a validated Slack User ID and user details.
@@ -116,17 +115,15 @@ export async function resolveTargetUser(input, client, respond) {
   }
 
   const cleanInput = cleanCommandText(input);
-  console.log(`resolveTargetUser called with: "${input}", cleanInput: "${cleanInput}"`);
 
   let targetUserId = null;
 
+  // TODO: Clean up slop logic, deterministically match on :lt<@hash1234|name>;gt format
   const match = cleanInput.match(/<@([A-Z0-9]+)(?:\|[^>]+)?>/i);
   if (match) {
     targetUserId = match[1];
-    console.log(`Matched Slack tag regex. targetUserId: ${targetUserId}`);
   } else {
     const searchName = cleanInput.replace(/^@/, "").trim().toLowerCase();
-    console.log(`Trying lookup for searchName: "${searchName}"`);
     if (searchName.length > 0) {
       const foundMember = cache.members.find(
         (m) =>
@@ -135,7 +132,6 @@ export async function resolveTargetUser(input, client, respond) {
       );
       if (foundMember) {
         targetUserId = foundMember.slack_user_id;
-        console.log(`Found member in DB cache. targetUserId: ${targetUserId}`);
       } else if (cache.slackUsers) {
         const foundSlackUser = cache.slackUsers.find(
           (u) =>
@@ -145,14 +141,12 @@ export async function resolveTargetUser(input, client, respond) {
         );
         if (foundSlackUser) {
           targetUserId = foundSlackUser.id;
-          console.log(`Found member in Slack users list cache. targetUserId: ${targetUserId}`);
         }
       }
     }
   }
 
   if (!targetUserId) {
-    console.log(`Could not resolve member for searchName/tag: "${cleanInput}"`);
     await respond({
       text: `Could not resolve member: *${cleanInput}*. Make sure to tag them (e.g. @member) or use their exact name.`,
       response_type: "ephemeral",

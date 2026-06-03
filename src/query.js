@@ -9,7 +9,6 @@ import { resolveTargetUser, cleanCommandText } from "./utils.js";
  */
 app.command("/query", async ({ command, ack, respond, client }) => {
   await ack();
-  console.log(`Command received - /query: "${command.text}" from user: ${command.user_id}`);
 
   try {
     const text = cleanCommandText(command.text);
