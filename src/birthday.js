@@ -4,7 +4,6 @@ import { cache } from "./cache.js";
 import { format, formatInTimeZone } from "date-fns-tz";
 import { differenceInYears, parse } from "date-fns";
 
-const BIRTHDAY_CHANNEL_ID = "C08QZ3A0QSY";
 const TIME_ZONE = "America/Los_Angeles"; // PST
 
 /**
@@ -52,7 +51,7 @@ const checkBirthdaysAndSendMessage = async () => {
 
         await app.client.chat.postMessage({
           token: process.env.SLACK_BOT_TOKEN,
-          channel: BIRTHDAY_CHANNEL_ID,
+          channel: process.env.BIRTHDAY_CHANNEL_ID,
           text: message,
         });
       }
