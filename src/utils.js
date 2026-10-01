@@ -35,7 +35,8 @@ export async function verifyPermission(requesterId, respond) {
         return (
           lowerRole === "leadership" ||
           lowerRole === "pres" ||
-          lowerRole === "advisors"
+          lowerRole === "advisors" ||
+          lowerRole === "tech"
         );
       }
     );
