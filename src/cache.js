@@ -3,6 +3,10 @@ import WebSocket from "ws";
 import "dotenv/config";
 import { WebClient } from "@slack/web-api";
 
+// TODO: we actually do not fetch a lot of data each time (~100 rows), and 
+// have had staleness bugs, so the utilities in this should be refactored to 
+// fetch from Supabase instead.
+
 export const slackClient = new WebClient(process.env.SLACK_BOT_TOKEN);
 
 const supabaseUrl = process.env.SUPABASE_URL || "";
