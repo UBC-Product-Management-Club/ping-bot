@@ -1,5 +1,6 @@
 import "dotenv/config";
 import pkg from "@slack/bolt";
+import cron from "node-cron";
 const { App } = pkg;
 
 export const app = new App({
@@ -9,7 +10,13 @@ export const app = new App({
   appToken: process.env.SLACK_APP_TOKEN,      // Else use the app token if socket mode is enabled
 });
 
-import { cache, refreshCache, refreshSlackUsersCache } from "./cache.js";
+import {
+  cache,
+  refreshCache,
+  refreshSlackUsersCache,
+  addSlackUser,
+  syncSlackUsers,
+} from "./cache.js";
 
 const pingMap = new Map();
 
@@ -59,6 +66,15 @@ app.message(async ({ message, say }) => {
     const res = await say({ text: `${tagString}`, thread_ts: message.ts });
     pingMap.set(`${message.channel}:${message.ts}`, res.ts);
   }
+});
+
+app.event("team_join", async ({ event }) => {
+  await addSlackUser(event.user);
+});
+
+// Scheduled monthly slack sync at every 1st of the month
+cron.schedule("0 2 1 * *", async () => {
+  await syncSlackUsers();
 });
 
 (async () => {

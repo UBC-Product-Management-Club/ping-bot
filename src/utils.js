@@ -1,4 +1,4 @@
-import { cache, supabase } from "./cache.js";
+import { cache, supabase, refreshSlackUsersCache } from "./cache.js";
 
 /**
  * Helper to verify if the requester has permission (is leadership or president).
@@ -106,61 +106,84 @@ export function cleanCommandText(text) {
     .trim();
 }
 
+const MENTION_RE = /^<@([UW][A-Z0-9]+)(?:\|[^>]*)?>$/;
+const USER_ID_RE = /^[UW][A-Z0-9]{8,}$/;
+
 /**
- * Resolves a target user input (either a Slack mention or a raw name/username)
+ * Extracts a user ID from an escaped Slack mention (<@U123|name>) or an ID.
+ */
+function parseUserId(text) {
+  const mention = text.match(MENTION_RE);
+  if (mention) return mention[1];
+  return USER_ID_RE.test(text) ? text : null;
+}
+
+/**
+ * Returns active Slack users whose username, display name, or real name match the query.
+ */
+function searchSlackUsers(query) {
+  const q = query.toLowerCase();
+  const people = cache.slackUsers.filter(
+    (u) => !u.is_bot && !u.deleted && u.id !== "USLACKBOT"
+  );
+  const namesOf = (u) =>
+    [u.name, u.real_name, u.profile?.display_name]
+      .filter(Boolean)
+      .map((n) => n.toLowerCase());
+
+  const exact = people.filter((u) => namesOf(u).includes(q));
+  if (exact.length > 0) return exact;
+  return people.filter((u) => namesOf(u).some((n) => n.includes(q)));
+}
+
+/**
+ * Searches Slack users by name, refreshing the cache once on a miss
+ * (e.g. the member joined after the cache was loaded).
+ */
+async function findUsersByName(text) {
+  const query = text.replace(/^@/, "").trim();
+  if (!query) return [];
+
+  let matches = searchSlackUsers(query);
+  if (matches.length === 0) {
+    await refreshSlackUsersCache();
+    matches = searchSlackUsers(query);
+  }
+  return matches;
+}
+
+async function reject(respond, text) {
+  await respond({ text, response_type: "ephemeral" });
+  return null;
+}
+
+/**
+ * Resolves a target user input (a Slack mention, user ID, or name)
  * to a validated Slack User ID and user details.
  */
 export async function resolveTargetUser(input, client, respond) {
-  if (!input) {
-    await respond({
-      text: "No member specified.",
-      response_type: "ephemeral",
-    });
-    return null;
-  }
+  const text = cleanCommandText(input);
+  if (!text) return reject(respond, "No member specified.");
 
-  const cleanInput = cleanCommandText(input);
-
-  let targetUserId = null;
-
-  // TODO: Clean up slop logic, deterministically match on :lt<@hash1234|name>;gt format
-  const match = cleanInput.match(/<@([A-Z0-9]+)(?:\|[^>]+)?>/i);
-  if (match) {
-    targetUserId = match[1];
-  } else {
-    const searchName = cleanInput.replace(/^@/, "").trim().toLowerCase();
-    if (searchName.length > 0) {
-      const foundMember = cache.members.find(
-        (m) =>
-          (m.name && m.name.toLowerCase().includes(searchName)) ||
-          (m.slack_user_id && m.slack_user_id.toLowerCase() === searchName)
+  let userId = parseUserId(text);
+  if (!userId) {
+    const matches = await findUsersByName(text);
+    if (matches.length === 0) {
+      return reject(
+        respond,
+        `Could not find a member matching *${text}*. Try tagging them (e.g. @member).`
       );
-      if (foundMember) {
-        targetUserId = foundMember.slack_user_id;
-      } else if (cache.slackUsers) {
-        const foundSlackUser = cache.slackUsers.find(
-          (u) =>
-            (u.name && u.name.toLowerCase() === searchName) ||
-            (u.real_name && u.real_name.toLowerCase().includes(searchName)) ||
-            (u.profile?.display_name && u.profile.display_name.toLowerCase() === searchName)
-        );
-        if (foundSlackUser) {
-          targetUserId = foundSlackUser.id;
-        }
-      }
     }
+    if (matches.length > 1) {
+      const options = matches.slice(0, 5).map((u) => `<@${u.id}>`).join(", ");
+      return reject(
+        respond,
+        `*${text}* matches multiple members: ${options}. Please tag the one you mean.`
+      );
+    }
+    userId = matches[0].id;
   }
 
-  if (!targetUserId) {
-    await respond({
-      text: `Could not resolve member: *${cleanInput}*. Make sure to tag them (e.g. @member) or use their exact name.`,
-      response_type: "ephemeral",
-    });
-    return null;
-  }
-
-  const targetUser = await getValidTargetUser(targetUserId, client, respond);
-  if (!targetUser) return null;
-
-  return { targetUserId, targetUser };
+  const targetUser = await getValidTargetUser(userId, client, respond);
+  return targetUser ? { targetUserId: userId, targetUser } : null;
 }
